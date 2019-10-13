@@ -1,0 +1,25 @@
+#ifndef CONSOLEWIDGET_HPP
+#define CONSOLEWIDGET_HPP
+
+#include <QProcess>
+#include <QTextCursor>
+#include <QTextEdit>
+
+class ConsoleWidget : public QTextEdit {
+    Q_OBJECT
+public:
+    explicit ConsoleWidget(QWidget *parent = nullptr);
+    void start(const QString &cmd, const QStringList& args = {});
+
+    void childWrite(const QByteArray &data);
+    void childCloseWrite();
+    int exitCode();
+
+private:
+    int m_lastWritePos;
+    QProcess m_process;
+
+    void keyPressEvent(QKeyEvent *) override;
+};
+
+#endif // CONSOLEWIDGET_HPP
