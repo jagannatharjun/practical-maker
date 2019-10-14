@@ -1,20 +1,31 @@
 #include "codeeditor.hpp"
 #include "consolewidget.hpp"
 
+#include <QFileDialog>
 #include <QKeyEvent>
+#include <QMessageBox>
 #include <QtDebug>
 
 CodeEditor::CodeEditor(QWidget *parent) : QTextEdit(parent) {
     auto f = font();
     f.setFamily("Source Code Pro");
-    f.setPointSize(16);
+    f.setPointSize(14);
     setFont(f);
+
+    setAcceptRichText(false);
 }
 
 bool CodeEditor::compile() {
+    m_console->show();
+    m_console->setText("Compiling...");
     m_console->start("g++", {"-x", "c++", "-"});
 
-    m_console->childWrite(toPlainText().toUtf8());
+    auto code = toPlainText().toUtf8();
+    code.append("\n\n#include <stdio.h>\nstruct __CODE_EDITOR_DISABLE_IO_BUFFER { "
+                 "__CODE_EDITOR_DISABLE_IO_BUFFER() {setvbuf(stdout, NULL, _IONBF, 0);} } "
+                 "__CODE_EDITOR_DISABLE_IO_BUFFER_OBJ{};");
+
+    m_console->childWrite(code);
     m_console->childCloseWrite();
 
     return m_console->exitCode() == 0;
@@ -72,8 +83,7 @@ void CodeEditor::keyPressEvent(QKeyEvent *event) {
         int i = identWidth(initialText, initialPos);
         QString s(i * 2, ' ');
         insertPlainText(s);
-        if (initialPos < initialText.size() &&
-            initialText[initialPos] == '}') {
+        if (initialPos < initialText.size() && initialText[initialPos] == '}') {
             auto s = '\n' + QString((i - 1) * 2, ' ');
             insertPlainText(s);
             auto t = textCursor();
@@ -81,4 +91,40 @@ void CodeEditor::keyPressEvent(QKeyEvent *event) {
             setTextCursor(t);
         }
     }
+}
+
+void CodeEditor::newEditor() { setPlainText({}); }
+
+void CodeEditor::save() {
+    if (m_fileName.isEmpty()) {
+        saveAs();
+        return;
+    }
+    QFile f(m_fileName);
+    if (!f.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QMessageBox::critical(
+            this, "Error",
+            tr("Failed to open \"%1\" for writing, error: %2").arg(m_fileName, f.errorString()));
+        return;
+    }
+    f.write(toPlainText().toUtf8());
+    f.close();
+}
+
+void CodeEditor::saveAs() {
+    m_fileName = QFileDialog::getSaveFileName(this, "Save as");
+    save();
+}
+
+void CodeEditor::open() {
+    m_fileName = QFileDialog::getOpenFileName(this, "Open");
+    QFile f(m_fileName);
+    if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QMessageBox::critical(
+            this, "Error",
+            tr("Failed to open \"%1\" for reading, error: %2").arg(m_fileName, f.errorString()));
+        return;
+    }
+    setPlainText(f.readAll());
+    f.close();
 }

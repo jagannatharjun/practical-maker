@@ -20,6 +20,7 @@ private:
     QProcess m_process;
 
     void keyPressEvent(QKeyEvent *) override;
+    void closeEvent(QCloseEvent *) override;
 };
 
 #endif // CONSOLEWIDGET_HPP

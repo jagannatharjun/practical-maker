@@ -17,8 +17,15 @@ public:
 protected:
     void keyPressEvent(QKeyEvent *) override;
 
+public slots:
+    void newEditor();
+    void save();
+    void saveAs();
+    void open();
+
 private:
     ConsoleWidget *m_console;
+    QString m_fileName;
 };
 
 #endif // CODEEDITOR_HPP
