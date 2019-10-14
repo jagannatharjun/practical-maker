@@ -34,14 +34,15 @@ int identWidth(const QString &s, int pos) {
         else if (s[i] == '}')
             w--;
     }
-    if (pos < s.size() && s[pos] == '}')
-        w--;
     return w < 0 ? 0 : w;
 }
 
 void CodeEditor::keyPressEvent(QKeyEvent *event) {
     bool accept = false;
     auto k = event->key();
+
+    static auto completekeys = {std::pair{'{', '}'}, {'(', ')'}, {'[', ']'}};
+
     if (event->matches(QKeySequence::StandardKey::ZoomIn)) {
         zoomIn();
     } else if (event->matches(QKeySequence::StandardKey::ZoomOut)) {
@@ -55,9 +56,29 @@ void CodeEditor::keyPressEvent(QKeyEvent *event) {
     if (accept)
         QTextEdit::keyPressEvent(event);
 
-    if (k == Qt::Key_Enter || k == Qt::Key_Enter) {
-        int i = identWidth(toPlainText(), textCursor().position());
+    for (auto keyPair : completekeys) {
+        if (event->text() == keyPair.first) {
+            insertPlainText(QString(keyPair.second));
+            auto t = textCursor();
+            t.setPosition(t.position() - 1);
+            setTextCursor(t);
+            break;
+        }
+    }
+
+    if (k == Qt::Key_Enter || k == Qt::Key_Return) {
+        const auto initialText = toPlainText();
+        const auto initialPos = textCursor().position();
+        int i = identWidth(initialText, initialPos);
         QString s(i * 2, ' ');
         insertPlainText(s);
+        if (initialPos < initialText.size() &&
+            initialText[initialPos] == '}') {
+            auto s = '\n' + QString((i - 1) * 2, ' ');
+            insertPlainText(s);
+            auto t = textCursor();
+            t.setPosition(t.position() - s.size());
+            setTextCursor(t);
+        }
     }
 }
