@@ -11,9 +11,6 @@ public:
     CodeEditor(QWidget *parent = nullptr);
     void setConsole(ConsoleWidget *edt) { m_console = edt; }
 
-    bool compile();
-    void run();
-
 protected:
     void keyPressEvent(QKeyEvent *) override;
 
@@ -22,10 +19,15 @@ public slots:
     void save();
     void saveAs();
     void open();
+    void compile();
+    void onlyRun();
+    void run();
 
 private:
     ConsoleWidget *m_console;
     QString m_fileName;
+
+    bool _compile();
 };
 
 #endif // CODEEDITOR_HPP

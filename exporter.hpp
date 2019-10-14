@@ -3,7 +3,7 @@
 
 class QString;
 
-void exportAsPdf(const QString &fileName, QString question, QString code,
-                 QString codeOutput);
+void exportAsPdf(QString question, QString code,
+                 QString codeOutput, QString footer);
 
 #endif // EXPORTER_HPP

@@ -20,27 +20,22 @@ int main(int argc, char *argv[]) {
     QVBoxLayout l;
     c.setLayout(&l);
 
-    QFrame exportWidget;
-    exportWidget.setMaximumHeight(40);
-
-    QHBoxLayout el;
-    exportWidget.setLayout(&el);
-
     QLineEdit ques;
-    el.addWidget(&ques);
-    el.setSpacing(0);
-    el.setMargin(0);
     auto f = ques.font();
     f.setFamily("Source Code Pro");
     f.setPointSize(11);
     ques.setFont(f);
-    l.addWidget(&exportWidget, 1);
+    l.addWidget(&ques);
 
     CodeEditor edit;
     l.addWidget(&edit);
 
     ConsoleWidget console;
     edit.setConsole(&console);
+
+    QLineEdit footer;
+    footer.setFont(f);
+    l.addWidget(&footer);
 
     QMenuBar menu;
     auto fileMenu = menu.addMenu("File");
@@ -49,9 +44,16 @@ int main(int argc, char *argv[]) {
     fileMenu->addAction("Save", &edit, &CodeEditor::save, QKeySequence::Save);
     fileMenu->addAction("Save As", &edit, &CodeEditor::saveAs, QKeySequence::SaveAs);
     fileMenu->addAction("Export", [&]() {
-        exportAsPdf("E:\\file.pdf", ques.text(), edit.toPlainText(), console.toPlainText());
+        exportAsPdf(ques.text(), edit.toPlainText(), console.toPlainText(), footer.text());
     });
     fileMenu->addAction("Exit", qApp, &QApplication::closeAllWindows, QKeySequence::Quit);
+
+    auto runMenu = menu.addMenu("Run");
+    runMenu->addAction("Compile", &edit, &CodeEditor::compile, QKeySequence(Qt::CTRL + Qt::Key_B));
+    runMenu->addAction("Run", &edit, &CodeEditor::onlyRun,
+                       QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_R));
+    runMenu->addAction("Compile And Run", &edit, &CodeEditor::run,
+                       QKeySequence(Qt::CTRL + Qt::Key_R));
 
     m.setMenuBar(&menu);
 

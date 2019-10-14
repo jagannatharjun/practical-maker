@@ -15,26 +15,33 @@ CodeEditor::CodeEditor(QWidget *parent) : QTextEdit(parent) {
     setAcceptRichText(false);
 }
 
-bool CodeEditor::compile() {
+void CodeEditor::compile() { _compile(); }
+
+void CodeEditor::onlyRun() {
+    m_console->show();
+    m_console->start("./a.exe");
+}
+
+void CodeEditor::run() {
+    if (_compile()) {
+        onlyRun();
+    }
+}
+
+bool CodeEditor::_compile() {
     m_console->show();
     m_console->setText("Compiling...");
     m_console->start("g++", {"-x", "c++", "-"});
 
     auto code = toPlainText().toUtf8();
     code.append("\n\n#include <stdio.h>\nstruct __CODE_EDITOR_DISABLE_IO_BUFFER { "
-                 "__CODE_EDITOR_DISABLE_IO_BUFFER() {setvbuf(stdout, NULL, _IONBF, 0);} } "
-                 "__CODE_EDITOR_DISABLE_IO_BUFFER_OBJ{};");
+                "__CODE_EDITOR_DISABLE_IO_BUFFER() {setvbuf(stdout, NULL, _IONBF, 0);} } "
+                "__CODE_EDITOR_DISABLE_IO_BUFFER_OBJ{};");
 
     m_console->childWrite(code);
     m_console->childCloseWrite();
 
     return m_console->exitCode() == 0;
-}
-
-void CodeEditor::run() {
-    if (compile()) {
-        m_console->start("./a.exe");
-    }
 }
 
 int identWidth(const QString &s, int pos) {
@@ -58,8 +65,6 @@ void CodeEditor::keyPressEvent(QKeyEvent *event) {
         zoomIn();
     } else if (event->matches(QKeySequence::StandardKey::ZoomOut)) {
         zoomOut();
-    } else if (k == Qt::Key_R && event->modifiers() & Qt::CTRL) {
-        run();
     } else {
         accept = true;
     }
@@ -118,6 +123,8 @@ void CodeEditor::saveAs() {
 
 void CodeEditor::open() {
     m_fileName = QFileDialog::getOpenFileName(this, "Open");
+    if (m_fileName.isEmpty())
+        return;
     QFile f(m_fileName);
     if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
         QMessageBox::critical(
