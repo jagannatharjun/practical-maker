@@ -140,7 +140,9 @@ void CodeEditor::save() {
 
 void CodeEditor::saveAs() {
     m_fileName = QFileDialog::getSaveFileName(this, "Save as");
-    save();
+    if (!m_fileName.isEmpty()) {
+        save();
+    }
 }
 
 void CodeEditor::open() {
