@@ -60,11 +60,17 @@ void CodeEditor::keyPressEvent(QKeyEvent *event) {
     auto k = event->key();
 
     static auto completekeys = {std::pair{'{', '}'}, {'(', ')'}, {'[', ']'}};
+    static QString keyToEat;
 
     if (event->matches(QKeySequence::StandardKey::ZoomIn)) {
         zoomIn();
     } else if (event->matches(QKeySequence::StandardKey::ZoomOut)) {
         zoomOut();
+    } else if (!keyToEat.isEmpty() && event->text() == keyToEat) {
+        accept = false;
+        auto t = textCursor();
+        t.setPosition(t.position() + 1);
+        setTextCursor(t);
     } else {
         accept = true;
     }
@@ -72,12 +78,14 @@ void CodeEditor::keyPressEvent(QKeyEvent *event) {
     if (accept)
         QTextEdit::keyPressEvent(event);
 
+    keyToEat.clear();
     for (auto keyPair : completekeys) {
         if (event->text() == keyPair.first) {
             insertPlainText(QString(keyPair.second));
             auto t = textCursor();
             t.setPosition(t.position() - 1);
             setTextCursor(t);
+            keyToEat = keyPair.second;
             break;
         }
     }
