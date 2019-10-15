@@ -6,6 +6,8 @@
 #include <QMessageBox>
 #include <QtDebug>
 
+QString myTab(int count) { return QString(count * 2, ' '); }
+
 CodeEditor::CodeEditor(QWidget *parent) : QTextEdit(parent) {
     auto f = font();
     f.setFamily("Source Code Pro");
@@ -62,7 +64,10 @@ void CodeEditor::keyPressEvent(QKeyEvent *event) {
     static auto completekeys = {std::pair{'{', '}'}, {'(', ')'}, {'[', ']'}};
     static QString keyToEat;
 
-    if (event->matches(QKeySequence::StandardKey::ZoomIn)) {
+    if (k == Qt::Key_Tab) {
+        accept = false;
+        insertPlainText(myTab(1));
+    } else if (event->matches(QKeySequence::StandardKey::ZoomIn)) {
         zoomIn();
     } else if (event->matches(QKeySequence::StandardKey::ZoomOut)) {
         zoomOut();
@@ -94,10 +99,9 @@ void CodeEditor::keyPressEvent(QKeyEvent *event) {
         const auto initialText = toPlainText();
         const auto initialPos = textCursor().position();
         int i = identWidth(initialText, initialPos);
-        QString s(i * 2, ' ');
-        insertPlainText(s);
+        insertPlainText(myTab(i));
         if (initialPos < initialText.size() && initialText[initialPos] == '}') {
-            auto s = '\n' + QString((i - 1) * 2, ' ');
+            auto s = '\n' + myTab(i - 1);
             insertPlainText(s);
             auto t = textCursor();
             t.setPosition(t.position() - s.size());
