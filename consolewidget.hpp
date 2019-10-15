@@ -9,11 +9,16 @@ class ConsoleWidget : public QTextEdit {
     Q_OBJECT
 public:
     explicit ConsoleWidget(QWidget *parent = nullptr);
-    void start(const QString &cmd, const QStringList& args = {});
+    void start(const QString &cmd, const QStringList &args = {});
 
     void childWrite(const QByteArray &data);
     void childCloseWrite();
-    int exitCode();
+
+signals:
+    void processFinished(int exitcode);
+
+private slots:
+    void _processFinised(int exitcode, QProcess::ExitStatus);
 
 private:
     int m_lastWritePos;

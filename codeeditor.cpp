@@ -20,25 +20,33 @@ CodeEditor::CodeEditor(QWidget *parent) : QTextEdit(parent) {
 void CodeEditor::compile() { _compile(); }
 
 void CodeEditor::onlyRun() {
-    m_console->show();
+    if (m_console->isHidden())
+        m_console->show();
+    m_console->setPlainText("");
     m_console->start("./a.exe");
 }
 
 void CodeEditor::run() {
-    if (_compile()) {
+    connect(m_console, &ConsoleWidget::processFinished, this, &CodeEditor::_run);
+    _compile();
+}
+
+void CodeEditor::_run(int compileExitCode) {
+    if (compileExitCode == 0) {
         onlyRun();
     }
+    disconnect(m_console, &ConsoleWidget::processFinished, this, &CodeEditor::_run);
 }
 
 CodeEditor::Language CodeEditor::lang() const { return m_lang; }
 
 void CodeEditor::setLang(const CodeEditor::Language lang) { m_lang = lang; }
 
-bool CodeEditor::_compile() {
+void CodeEditor::_compile() {
     m_console->show();
-    m_console->setText("Compiling...");
     auto code = toPlainText().toUtf8();
 
+    m_console->setPlainText("Compiling....");
     if (m_lang == CppLang) {
         m_console->start("g++", {"-x", "c++", "-"});
         code.append("\n\n#include <stdio.h>\nstruct __CODE_EDITOR_DISABLE_IO_BUFFER { "
@@ -49,11 +57,8 @@ bool CodeEditor::_compile() {
         code.append("\n\n#include <stdio.h>\nvoid __attribute__ ((constructor)) "
                     "__CODE_EDITOR_DISABLE_IO_BUFFER() {setvbuf(stdout, NULL, _IONBF, 0);}");
     }
-
     m_console->childWrite(code);
     m_console->childCloseWrite();
-
-    return m_console->exitCode() == 0;
 }
 
 int identWidth(const QString &s, int pos) {
@@ -75,14 +80,12 @@ void CodeEditor::keyPressEvent(QKeyEvent *event) {
     static QString keyToEat;
 
     if (k == Qt::Key_Tab) {
-        accept = false;
         insertPlainText(myTab(1));
     } else if (event->matches(QKeySequence::StandardKey::ZoomIn)) {
         zoomIn();
     } else if (event->matches(QKeySequence::StandardKey::ZoomOut)) {
         zoomOut();
     } else if (!keyToEat.isEmpty() && event->text() == keyToEat) {
-        accept = false;
         auto t = textCursor();
         t.setPosition(t.position() + 1);
         setTextCursor(t);

@@ -28,12 +28,15 @@ public slots:
     void onlyRun();
     void run();
 
+private slots:
+    void _run(int compileExitCode);
+
 private:
     ConsoleWidget *m_console;
     QString m_fileName;
     Language m_lang = Language::CppLang;
 
-    bool _compile();
+    void _compile();
 };
 
 #endif // CODEEDITOR_HPP

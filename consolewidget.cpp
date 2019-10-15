@@ -1,6 +1,6 @@
 #include "consolewidget.hpp"
+#include <QDebug>
 #include <QKeyEvent>
-
 ConsoleWidget::ConsoleWidget(QWidget *parent) : QTextEdit(parent) {
     auto f = font();
     f.setFamily("Source Code Pro");
@@ -19,16 +19,16 @@ ConsoleWidget::ConsoleWidget(QWidget *parent) : QTextEdit(parent) {
         m_lastWritePos = textCursor().position();
     });
 
-    connect(&m_process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-            [this](int exitCode, QProcess::ExitStatus exitStatus) {
-                append("Program exited with code " + QString::number(exitCode));
-                if (exitStatus != QProcess::ExitStatus::NormalExit)
-                    append("\nError: " + m_process.errorString());
-            });
+    connect(&m_process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this,
+            &ConsoleWidget::_processFinised);
+
+    connect(&m_process, &QProcess::errorOccurred, [this](QProcess::ProcessError) {
+        append("Encountered Error - " + m_process.errorString());
+        append("Tried executing - " + m_process.program());
+    });
 }
 
 void ConsoleWidget::start(const QString &cmd, const QStringList &args) {
-    setPlainText("");
     m_lastWritePos = 0;
     m_process.start(cmd, args);
 }
@@ -36,14 +36,14 @@ void ConsoleWidget::start(const QString &cmd, const QStringList &args) {
 void ConsoleWidget::childWrite(const QByteArray &data) { m_process.write(data); }
 
 void ConsoleWidget::childCloseWrite() { m_process.closeWriteChannel(); }
-#include <QGuiApplication>
-int ConsoleWidget::exitCode() {
-    while (!m_process.waitForFinished(100)) {
-        qGuiApp->processEvents();
-    }
-    return m_process.exitCode();
+
+void ConsoleWidget::_processFinised(int exitcode, QProcess::ExitStatus exitStatus) {
+    append("Program exited with code " + QString::number(exitcode));
+    if (exitStatus != QProcess::ExitStatus::NormalExit)
+        append("\nError: " + m_process.errorString());
+    emit processFinished(exitcode);
 }
-#include <QDebug>
+
 void ConsoleWidget::keyPressEvent(QKeyEvent *event) {
     bool accept;
     int key = event->key();
@@ -69,8 +69,9 @@ void ConsoleWidget::keyPressEvent(QKeyEvent *event) {
     if (accept) {
         QTextEdit::keyPressEvent(event);
     }
-
-    qDebug() << accept;
 }
 
-void ConsoleWidget::closeEvent(QCloseEvent *) { m_process.kill(); }
+void ConsoleWidget::closeEvent(QCloseEvent *e) {
+    m_process.kill();
+    QTextEdit::closeEvent(e);
+}
