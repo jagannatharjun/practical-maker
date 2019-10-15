@@ -14,6 +14,8 @@ public:
     void childWrite(const QByteArray &data);
     void childCloseWrite();
 
+    void setWorkingDirectory(const QString& dir);
+
 signals:
     void processFinished(int exitcode);
 

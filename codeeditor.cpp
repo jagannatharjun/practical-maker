@@ -43,6 +43,7 @@ CodeEditor::Language CodeEditor::lang() const { return m_lang; }
 void CodeEditor::setLang(const CodeEditor::Language lang) { m_lang = lang; }
 
 void CodeEditor::_compile() {
+
     m_console->show();
     auto code = toPlainText().toUtf8();
 

@@ -1,6 +1,7 @@
 #include "consolewidget.hpp"
 #include <QDebug>
 #include <QKeyEvent>
+
 ConsoleWidget::ConsoleWidget(QWidget *parent) : QTextEdit(parent) {
     auto f = font();
     f.setFamily("Source Code Pro");
@@ -36,6 +37,8 @@ void ConsoleWidget::start(const QString &cmd, const QStringList &args) {
 void ConsoleWidget::childWrite(const QByteArray &data) { m_process.write(data); }
 
 void ConsoleWidget::childCloseWrite() { m_process.closeWriteChannel(); }
+
+void ConsoleWidget::setWorkingDirectory(const QString &dir) { m_process.setWorkingDirectory(dir); }
 
 void ConsoleWidget::_processFinised(int exitcode, QProcess::ExitStatus exitStatus) {
     append("Program exited with code " + QString::number(exitcode));

@@ -12,6 +12,7 @@
 
 int main(int argc, char *argv[]) {
     QApplication a(argc, argv);
+    qputenv("Path", qgetenv("Path") + ";" + qApp->applicationDirPath().toUtf8() + "\\mingw32\\bin;");
     a.setStyle(QStyleFactory::create("fusion"));
     QMainWindow m;
 
