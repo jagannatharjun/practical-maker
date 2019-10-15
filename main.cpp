@@ -25,9 +25,13 @@ int main(int argc, char *argv[]) {
     f.setFamily("Source Code Pro");
     f.setPointSize(11);
     ques.setFont(f);
+    ques.setToolTip("Question");
+    ques.setPlaceholderText("Enter your Question here...");
     l.addWidget(&ques);
 
     CodeEditor edit;
+    edit.setToolTip("Code");
+    edit.setPlaceholderText("Enter your Code here...");
     l.addWidget(&edit);
 
     ConsoleWidget console;
@@ -35,6 +39,8 @@ int main(int argc, char *argv[]) {
 
     QLineEdit footer;
     footer.setFont(f);
+    footer.setToolTip("Footer");
+    footer.setPlaceholderText("Enter your footer here...");
     l.addWidget(&footer);
 
     QMenuBar menu;
@@ -57,7 +63,7 @@ int main(int argc, char *argv[]) {
 
     m.setMenuBar(&menu);
 
-    m.resize(800, 448);
+    m.resize(900, 500);
     m.show();
 
     return a.exec();
