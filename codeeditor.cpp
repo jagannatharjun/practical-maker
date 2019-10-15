@@ -30,15 +30,25 @@ void CodeEditor::run() {
     }
 }
 
+CodeEditor::Language CodeEditor::lang() const { return m_lang; }
+
+void CodeEditor::setLang(const CodeEditor::Language lang) { m_lang = lang; }
+
 bool CodeEditor::_compile() {
     m_console->show();
     m_console->setText("Compiling...");
-    m_console->start("g++", {"-x", "c++", "-"});
-
     auto code = toPlainText().toUtf8();
-    code.append("\n\n#include <stdio.h>\nstruct __CODE_EDITOR_DISABLE_IO_BUFFER { "
-                "__CODE_EDITOR_DISABLE_IO_BUFFER() {setvbuf(stdout, NULL, _IONBF, 0);} } "
-                "__CODE_EDITOR_DISABLE_IO_BUFFER_OBJ{};");
+
+    if (m_lang == CppLang) {
+        m_console->start("g++", {"-x", "c++", "-"});
+        code.append("\n\n#include <stdio.h>\nstruct __CODE_EDITOR_DISABLE_IO_BUFFER { "
+                    "__CODE_EDITOR_DISABLE_IO_BUFFER() {setvbuf(stdout, NULL, _IONBF, 0);} } "
+                    "__CODE_EDITOR_DISABLE_IO_BUFFER_OBJ{};");
+    } else {
+        m_console->start("gcc", {"-x", "c", "-"});
+        code.append("\n\n#include <stdio.h>\nvoid __attribute__ ((constructor)) "
+                    "__CODE_EDITOR_DISABLE_IO_BUFFER() {setvbuf(stdout, NULL, _IONBF, 0);}");
+    }
 
     m_console->childWrite(code);
     m_console->childCloseWrite();

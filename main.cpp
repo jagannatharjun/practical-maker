@@ -2,6 +2,7 @@
 #include "consolewidget.hpp"
 #include "exporter.hpp"
 
+#include <QActionGroup>
 #include <QApplication>
 #include <QLineEdit>
 #include <QMainWindow>
@@ -60,6 +61,21 @@ int main(int argc, char *argv[]) {
                        QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_R));
     runMenu->addAction("Compile And Run", &edit, &CodeEditor::run,
                        QKeySequence(Qt::CTRL + Qt::Key_R));
+
+    auto langMenu = menu.addMenu("Language");
+    QActionGroup langGroup(&m);
+    langGroup.setExclusive(true);
+    auto clang = langMenu->addAction("C"), cpplang = langMenu->addAction("Cpp");
+    clang->setCheckable(true);
+    cpplang->setCheckable(true);
+
+    langGroup.addAction(clang);
+    langGroup.addAction(cpplang);
+    cpplang->setChecked(true);
+    clang->setChecked(false);
+    QObject::connect(clang, &QAction::triggered, [&edit]() { edit.setLang(CodeEditor::CLang); });
+    QObject::connect(cpplang, &QAction::triggered,
+                     [&edit]() { edit.setLang(CodeEditor::CppLang); });
 
     m.setMenuBar(&menu);
 
