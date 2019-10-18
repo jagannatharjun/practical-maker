@@ -17,6 +17,15 @@ void makeHtmlPrintableText(QString &txt) {
 static const int textMargins = 12;  // in millimeters
 static const int borderMargins = 2; // in millimeters
 
+struct Practical {
+    std::unique_ptr<QTextDocument> practical;
+    QString footer;
+    Practical(std::unique_ptr<QTextDocument> &&p, QString &&f)
+        : practical(std::move(p)), footer(f) {}
+};
+
+static std::vector<Practical> practicals;
+
 static double mmToPixels(QPrinter &printer, int mm) {
     return mm * 0.039370147 * printer.resolution();
 }
@@ -54,8 +63,7 @@ static void paintPage(QPrinter &printer, int pageNumber, int pageCount, QPainter
     painter->drawText(footerRect, Qt::AlignBottom | Qt::AlignLeft, footer);
 }
 
-static void printPractical(QPrinter &printer, std::vector<std::unique_ptr<QTextDocument>> &docs,
-                           QWidget *parentWidget, const QString &footer) {
+static void printPractical(QPrinter &printer, std::vector<Practical> &docs, QWidget *parentWidget) {
     QPainter painter(&printer);
     auto f = painter.font();
     f.setFamily("Source Code Pro");
@@ -70,15 +78,15 @@ static void printPractical(QPrinter &printer, std::vector<std::unique_ptr<QTextD
 
     bool firstPage = true;
     for (auto &doc : docs) {
-        doc->setPageSize(textRect.size());
+        doc.practical->setPageSize(textRect.size());
 
-        const int pageCount = doc->pageCount();
+        const int pageCount = doc.practical->pageCount();
         for (int pageIndex = 0; pageIndex < pageCount; ++pageIndex) {
             if (!firstPage)
                 printer.newPage();
 
-            paintPage(printer, pageIndex, pageCount, &painter, doc.get(), textRect, footerHeight,
-                      footer);
+            paintPage(printer, pageIndex, pageCount, &painter, doc.practical.get(), textRect,
+                      footerHeight, doc.footer);
             firstPage = false;
         }
     }
@@ -111,7 +119,6 @@ void exportAsPdf(QString question, QString code, QString codeOutput, QString foo
     makeHtmlPrintableText(code);
     makeHtmlPrintableText(codeOutput);
 
-    static std::vector<std::unique_ptr<QTextDocument>> practicals;
     if (!previous)
         practicals.clear();
     const QString html = QString(R"(<font face="Source Code Pro" size=4><b>%1</b></font>
@@ -119,8 +126,15 @@ void exportAsPdf(QString question, QString code, QString codeOutput, QString foo
                    <br><div style='background-color: grey;'><pre><font size=3 face= "Courier New"><b>%3</b></font></pre></div>)")
                              .arg(question, code, codeOutput);
 
-    std::unique_ptr<QTextDocument> doc = std::make_unique<QTextDocument>();
-    doc->setHtml(html);
-    practicals.emplace_back(std::move(doc));
-    printPractical(*pdf, practicals, nullptr, footer);
+    practicals.emplace_back(std::make_unique<QTextDocument>(), std::move(footer));
+    practicals.back().practical->setHtml(html);
+
+    printPractical(*pdf, practicals, nullptr);
+}
+
+void deletePreviousMerge() {
+    QPrinter *pdf = getPdf(true);
+    if (practicals.size())
+        practicals.pop_back();
+    printPractical(*pdf, practicals, nullptr);
 }

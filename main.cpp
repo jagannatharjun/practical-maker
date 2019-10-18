@@ -52,12 +52,21 @@ int main(int argc, char *argv[]) {
     fileMenu->addAction("Open", &edit, &CodeEditor::open, QKeySequence::Open);
     fileMenu->addAction("Save", &edit, &CodeEditor::save, QKeySequence::Save);
     fileMenu->addAction("Save As", &edit, &CodeEditor::saveAs, QKeySequence::SaveAs);
-    fileMenu->addAction("Export As", [&]() {
-        exportAsPdf(ques.text(), edit.toPlainText(), console.toPlainText(), footer.text(), false);
-    });
-    fileMenu->addAction("Merge", [&]() {
-        exportAsPdf(ques.text(), edit.toPlainText(), console.toPlainText(), footer.text(), true);
-    });
+    fileMenu->addAction(
+        "Export As",
+        [&]() {
+            exportAsPdf(ques.text(), edit.toPlainText(), console.toPlainText(), footer.text(),
+                        false);
+        },
+        QKeySequence(Qt::CTRL + Qt::Key_E));
+    fileMenu->addAction(
+        "Merge",
+        [&]() {
+            exportAsPdf(ques.text(), edit.toPlainText(), console.toPlainText(), footer.text(),
+                        true);
+        },
+        QKeySequence(Qt::CTRL + Qt::Key_M));
+    fileMenu->addAction("Delete Previous Merge", []() { deletePreviousMerge(); });
     fileMenu->addAction("Exit", qApp, &QApplication::closeAllWindows, QKeySequence::Quit);
 
     auto runMenu = menu.addMenu("Run");

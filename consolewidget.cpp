@@ -11,22 +11,21 @@ ConsoleWidget::ConsoleWidget(QWidget *parent) : QTextEdit(parent) {
     m_lastWritePos = 0;
 
     connect(&m_process, &QProcess::readyReadStandardOutput, [this]() {
-        append(m_process.readAllStandardOutput());
+        moveCursor(QTextCursor::End);
+        insertPlainText(m_process.readAllStandardOutput());
+        moveCursor(QTextCursor::End);
         m_lastWritePos = textCursor().position();
     });
 
     connect(&m_process, &QProcess::readyReadStandardError, [this]() {
-        append(m_process.readAllStandardError());
+        moveCursor(QTextCursor::End);
+        insertPlainText(m_process.readAllStandardError());
+        moveCursor(QTextCursor::End);
         m_lastWritePos = textCursor().position();
     });
 
     connect(&m_process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this,
             &ConsoleWidget::_processFinised);
-
-    connect(&m_process, &QProcess::errorOccurred, [this](QProcess::ProcessError) {
-        append("Encountered Error - " + m_process.errorString());
-        append("Tried executing - " + m_process.program());
-    });
 }
 
 void ConsoleWidget::start(const QString &cmd, const QStringList &args) {
@@ -52,11 +51,6 @@ void ConsoleWidget::keyPressEvent(QKeyEvent *event) {
     int key = event->key();
     if (key == Qt::Key_Backspace || event->key() == Qt::Key_Left) {
         accept = textCursor().position() > m_lastWritePos;
-    } else if (key == Qt::Key_Return || key == Qt::Key_Enter) {
-        accept = false;
-        int count = toPlainText().count() - m_lastWritePos;
-        QString cmd = toPlainText().right(count) + "\n";
-        qDebug() << m_process.write(cmd.toUtf8());
     } else if (key == Qt::Key_Up) {
         accept = false;
     } else if (event->matches(QKeySequence::StandardKey::ZoomIn)) {
@@ -71,6 +65,14 @@ void ConsoleWidget::keyPressEvent(QKeyEvent *event) {
 
     if (accept) {
         QTextEdit::keyPressEvent(event);
+    }
+
+    if (key == Qt::Key_Return || key == Qt::Key_Enter) {
+        auto text = toPlainText();
+        int count = text.count() - m_lastWritePos;
+        QString cmd = text.right(count);
+        m_process.write(cmd.toUtf8());
+        m_lastWritePos = textCursor().position();
     }
 }
 
