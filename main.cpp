@@ -12,7 +12,8 @@
 
 int main(int argc, char *argv[]) {
     QApplication a(argc, argv);
-    qputenv("Path", qgetenv("Path") + ";" + qApp->applicationDirPath().toUtf8() + "\\mingw32\\bin;");
+    qputenv("Path",
+            qgetenv("Path") + ";" + qApp->applicationDirPath().toUtf8() + "\\mingw32\\bin;");
     a.setStyle(QStyleFactory::create("fusion"));
     QMainWindow m;
 
@@ -51,8 +52,11 @@ int main(int argc, char *argv[]) {
     fileMenu->addAction("Open", &edit, &CodeEditor::open, QKeySequence::Open);
     fileMenu->addAction("Save", &edit, &CodeEditor::save, QKeySequence::Save);
     fileMenu->addAction("Save As", &edit, &CodeEditor::saveAs, QKeySequence::SaveAs);
-    fileMenu->addAction("Export", [&]() {
-        exportAsPdf(ques.text(), edit.toPlainText(), console.toPlainText(), footer.text());
+    fileMenu->addAction("Export As", [&]() {
+        exportAsPdf(ques.text(), edit.toPlainText(), console.toPlainText(), footer.text(), false);
+    });
+    fileMenu->addAction("Merge", [&]() {
+        exportAsPdf(ques.text(), edit.toPlainText(), console.toPlainText(), footer.text(), true);
     });
     fileMenu->addAction("Exit", qApp, &QApplication::closeAllWindows, QKeySequence::Quit);
 
@@ -80,8 +84,8 @@ int main(int argc, char *argv[]) {
 
     m.setMenuBar(&menu);
 
-    m.resize(900, 500);
-    m.show();
+    console.resize(900, 500);
+    m.showMaximized();
 
     return a.exec();
 }

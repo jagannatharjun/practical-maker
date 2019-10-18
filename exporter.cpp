@@ -1,15 +1,19 @@
 #include "exporter.hpp"
 #include <QDebug>
 #include <QFileDialog>
+#include <QMessageBox>
 #include <QPainter>
 #include <QPrinter>
 #include <QString>
 #include <QTextDocument>
+#include <memory>
+#include <vector>
 
 void makeHtmlPrintableText(QString &txt) {
     txt.replace('<', "&lt;");
     txt.replace('>', "&gt;");
 }
+
 static const int textMargins = 12;  // in millimeters
 static const int borderMargins = 2; // in millimeters
 
@@ -26,7 +30,7 @@ static void paintPage(QPrinter &printer, int pageNumber, int pageCount, QPainter
 
     const double bm = mmToPixels(printer, borderMargins);
     const QRectF borderRect(bm, bm, pageSize.width() - 2 * bm, pageSize.height() - 2 * bm);
-    painter->drawRect(borderRect);
+    // painter->drawRect(borderRect);
 
     painter->save();
     // textPageRect is the rectangle in the coordinate system of the QTextDocument, in pixels,
@@ -47,11 +51,11 @@ static void paintPage(QPrinter &printer, int pageNumber, int pageCount, QPainter
     footerRect.setTop(textRect.bottom());
     footerRect.setHeight(footerHeight);
 
-    painter->drawText(footerRect, Qt::AlignVCenter | Qt::AlignLeft, footer);
+    painter->drawText(footerRect, Qt::AlignBottom | Qt::AlignLeft, footer);
 }
 
-static void printDocument(QPrinter &printer, QTextDocument *doc, QWidget *parentWidget,
-                          const QString &footer) {
+static void printPractical(QPrinter &printer, std::vector<std::unique_ptr<QTextDocument>> &docs,
+                           QWidget *parentWidget, const QString &footer) {
     QPainter painter(&printer);
     auto f = painter.font();
     f.setFamily("Source Code Pro");
@@ -59,44 +63,64 @@ static void printDocument(QPrinter &printer, QTextDocument *doc, QWidget *parent
     QSizeF pageSize = printer.pageRect().size(); // page size in pixels
     // Calculate the rectangle where to lay out the text
     const double tm = mmToPixels(printer, textMargins);
-    const qreal footerHeight = painter.fontMetrics().height();
+    const qreal footerHeight = painter.fontMetrics().height() * 2;
     const QRectF textRect(tm, tm, pageSize.width() - 2 * tm,
                           pageSize.height() - 2 * tm - footerHeight);
     // qDebug() << "textRect=" << textRect;
-    doc->setPageSize(textRect.size());
-
-    const int pageCount = doc->pageCount();
 
     bool firstPage = true;
-    for (int pageIndex = 0; pageIndex < pageCount; ++pageIndex) {
-        if (!firstPage)
-            printer.newPage();
+    for (auto &doc : docs) {
+        doc->setPageSize(textRect.size());
 
-        paintPage(printer, pageIndex, pageCount, &painter, doc, textRect, footerHeight, footer);
-        firstPage = false;
+        const int pageCount = doc->pageCount();
+        for (int pageIndex = 0; pageIndex < pageCount; ++pageIndex) {
+            if (!firstPage)
+                printer.newPage();
+
+            paintPage(printer, pageIndex, pageCount, &painter, doc.get(), textRect, footerHeight,
+                      footer);
+            firstPage = false;
+        }
     }
 }
 
-void exportAsPdf(QString question, QString code, QString codeOutput, QString footer) {
+QPrinter *getPdf(bool previous) {
+    static QPrinter pdf;
+    if (!previous || pdf.outputFileName().isEmpty()) {
+        pdf.setPageSize(QPageSize(QPageSize::A4));
+        pdf.setOutputFormat(QPrinter::OutputFormat::PdfFormat);
+        pdf.setFontEmbeddingEnabled(true);
+        auto outputFileName = QFileDialog::getSaveFileName(nullptr, "Export As", {}, "*.pdf");
+        if (QFile::exists(outputFileName) && !QFile::remove(outputFileName)) {
+            QMessageBox::critical(nullptr, "Error", "Failed to remove existing pdf");
+            return nullptr;
+        }
+        pdf.setOutputFileName(outputFileName);
+    }
+    return &pdf;
+}
 
-    QPrinter pdf;
-    pdf.setPageSize(QPageSize(QPageSize::A4));
-    pdf.setOutputFormat(QPrinter::OutputFormat::PdfFormat);
-    pdf.setOutputFileName(QFileDialog::getSaveFileName(nullptr, "Export As", {}, "*.pdf"));
-    pdf.setFullPage(true);
+void exportAsPdf(QString question, QString code, QString codeOutput, QString footer,
+                 bool previous) {
+
+    QPrinter *pdf = getPdf(previous);
+    if (!pdf)
+        return;
 
     makeHtmlPrintableText(question);
     makeHtmlPrintableText(code);
     makeHtmlPrintableText(codeOutput);
 
+    static std::vector<std::unique_ptr<QTextDocument>> practicals;
+    if (!previous)
+        practicals.clear();
     const QString html = QString(R"(<font face="Source Code Pro" size=4><b>%1</b></font>
                    <pre><font size=4 face="Source Code Pro">%2</font></pre>
                    <br><div style='background-color: grey;'><pre><font size=3 face= "Courier New"><b>%3</b></font></pre></div>)")
                              .arg(question, code, codeOutput);
 
-    QTextDocument doc;
-    doc.setPageSize(pdf.pageLayout().fullRectPoints().size());
-    doc.setHtml(html);
-    // doc.print(&pdf);
-    printDocument(pdf, &doc, nullptr, footer);
+    std::unique_ptr<QTextDocument> doc = std::make_unique<QTextDocument>();
+    doc->setHtml(html);
+    practicals.emplace_back(std::move(doc));
+    printPractical(*pdf, practicals, nullptr, footer);
 }

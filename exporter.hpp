@@ -1,9 +1,8 @@
 #ifndef EXPORTER_HPP
 #define EXPORTER_HPP
 
-class QString;
+#include <QString>
 
-void exportAsPdf(QString question, QString code,
-                 QString codeOutput, QString footer);
+void exportAsPdf(QString question, QString code, QString codeOutput, QString footer, bool previous);
 
 #endif // EXPORTER_HPP

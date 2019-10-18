@@ -49,12 +49,12 @@ void CodeEditor::_compile() {
 
     m_console->setPlainText("Compiling....");
     if (m_lang == CppLang) {
-        m_console->start("g++", {"-x", "c++", "-"});
+        m_console->start("g++", {"-x", "c++", "--static", "-"});
         code.append("\n\n#include <stdio.h>\nstruct __CODE_EDITOR_DISABLE_IO_BUFFER { "
                     "__CODE_EDITOR_DISABLE_IO_BUFFER() {setvbuf(stdout, NULL, _IONBF, 0);} } "
                     "__CODE_EDITOR_DISABLE_IO_BUFFER_OBJ{};");
     } else {
-        m_console->start("gcc", {"-x", "c", "-"});
+        m_console->start("gcc", {"-x", "c", "--static", "-"});
         code.append("\n\n#include <stdio.h>\nvoid __attribute__ ((constructor)) "
                     "__CODE_EDITOR_DISABLE_IO_BUFFER() {setvbuf(stdout, NULL, _IONBF, 0);}");
     }
