@@ -1,18 +1,14 @@
 #include "exporter.hpp"
 #include <QDebug>
-#include <QFileDialog>
 #include <QMessageBox>
 #include <QPainter>
 #include <QPrinter>
 #include <QString>
+#include <QTextCursor>
 #include <QTextDocument>
+#include <QTextFrame>
 #include <memory>
 #include <vector>
-
-void makeHtmlPrintableText(QString &txt) {
-    txt.replace('<', "&lt;");
-    txt.replace('>', "&gt;");
-}
 
 static const int textMargins = 12;  // in millimeters
 static const int borderMargins = 2; // in millimeters
@@ -92,13 +88,12 @@ static void printPractical(QPrinter &printer, std::vector<Practical> &docs, QWid
     }
 }
 
-QPrinter *getPdf(bool previous) {
+QPrinter *getPdf(QString outputFileName, bool previous) {
     static QPrinter pdf;
     if (!previous || pdf.outputFileName().isEmpty()) {
         pdf.setPageSize(QPageSize(QPageSize::A4));
         pdf.setOutputFormat(QPrinter::OutputFormat::PdfFormat);
         pdf.setFontEmbeddingEnabled(true);
-        auto outputFileName = QFileDialog::getSaveFileName(nullptr, "Export As", {}, "*.pdf");
         if (QFile::exists(outputFileName) && !QFile::remove(outputFileName)) {
             QMessageBox::critical(nullptr, "Error", "Failed to remove existing pdf");
             return nullptr;
@@ -108,32 +103,54 @@ QPrinter *getPdf(bool previous) {
     return &pdf;
 }
 
-void exportAsPdf(QString question, QString code, QString codeOutput, QString footer,
-                 bool previous) {
+#include <QTextEdit>
 
-    QPrinter *pdf = getPdf(previous);
+void exportAsPdf(QString outputFileName, QString question, QString code, QString codeOutput,
+                 QString footer, bool previous) {
+
+    QPrinter *pdf = getPdf(outputFileName, previous);
     if (!pdf)
         return;
 
-    makeHtmlPrintableText(question);
-    makeHtmlPrintableText(code);
-    makeHtmlPrintableText(codeOutput);
-
     if (!previous)
         practicals.clear();
-    const QString html = QString(R"(<font face="Source Code Pro" size=4><b>%1</b></font>
-                   <pre><font size=4 face="Source Code Pro">%2</font></pre>
-                   <br><div style='background-color: grey;'><pre><font size=3 face= "Courier New"><b>%3</b></font></pre></div>)")
-                             .arg(question, code, codeOutput);
 
     practicals.emplace_back(std::make_unique<QTextDocument>(), std::move(footer));
-    practicals.back().practical->setHtml(html);
+    QTextCursor *textCursor(new QTextCursor(practicals.back().practical.get()));
+
+    QTextFrameFormat frameFormat;
+    QTextCharFormat format;
+    QFont font("Source Code Pro", 14);
+
+    auto questionFrame = textCursor->insertFrame(frameFormat);
+    auto questionCursor = new QTextCursor(questionFrame);
+
+    font.setBold(true);
+    format.setFont(font);
+    questionCursor->insertText(question + "\n", format);
+
+    auto codeFrame = textCursor->insertFrame(frameFormat);
+    auto codeCursor = new QTextCursor(codeFrame);
+
+    font.setBold(false);
+    font.setPointSize(12);
+    format.setFont(font);
+    codeCursor->insertText(code + "\n", format);
+
+    frameFormat.setBackground(QBrush(Qt::lightGray));
+    auto codeOutputFrame = textCursor->insertFrame(frameFormat);
+    auto codeOutputCursor = new QTextCursor(codeOutputFrame);
+    codeOutputCursor->insertText(codeOutput, format);
+
+    QTextEdit *edt = new QTextEdit;
+    edt->setDocument(practicals.back().practical.get());
+    edt->show();
 
     printPractical(*pdf, practicals, nullptr);
 }
 
 void deletePreviousMerge() {
-    QPrinter *pdf = getPdf(true);
+    QPrinter *pdf = getPdf({}, true);
     if (practicals.size())
         practicals.pop_back();
     printPractical(*pdf, practicals, nullptr);

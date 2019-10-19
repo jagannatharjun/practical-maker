@@ -4,6 +4,7 @@
 
 #include <QActionGroup>
 #include <QApplication>
+#include <QFileDialog>
 #include <QLineEdit>
 #include <QMainWindow>
 #include <QMenuBar>
@@ -12,6 +13,7 @@
 
 int main(int argc, char *argv[]) {
     QApplication a(argc, argv);
+
     qputenv("Path",
             qgetenv("Path") + ";" + qApp->applicationDirPath().toUtf8() + "\\mingw32\\bin;");
     a.setStyle(QStyleFactory::create("fusion"));
@@ -55,15 +57,15 @@ int main(int argc, char *argv[]) {
     fileMenu->addAction(
         "Export As",
         [&]() {
-            exportAsPdf(ques.text(), edit.toPlainText(), console.toPlainText(), footer.text(),
-                        false);
+            exportAsPdf(QFileDialog::getSaveFileName(&m, "Export As", "", "*.pdf"), ques.text(),
+                        edit.toPlainText(), console.toPlainText(), footer.text(), false);
         },
         QKeySequence(Qt::CTRL + Qt::Key_E));
     fileMenu->addAction(
         "Merge",
         [&]() {
-            exportAsPdf(ques.text(), edit.toPlainText(), console.toPlainText(), footer.text(),
-                        true);
+            exportAsPdf(QFileDialog::getSaveFileName(&m, "Export As", "", "*.pdf"), ques.text(),
+                        edit.toPlainText(), console.toPlainText(), footer.text(), true);
         },
         QKeySequence(Qt::CTRL + Qt::Key_M));
     fileMenu->addAction("Delete Previous Merge", []() { deletePreviousMerge(); });
@@ -95,6 +97,12 @@ int main(int argc, char *argv[]) {
 
     console.resize(900, 500);
     m.showMaximized();
+
+//    edit.setPlainText("int main() {}");
+//    edit.run();
+
+//    exportAsPdf("E:\\test.pdf", "My question", edit.toPlainText(), console.toPlainText(), "",
+//                false);
 
     return a.exec();
 }
