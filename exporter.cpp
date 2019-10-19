@@ -137,14 +137,24 @@ void exportAsPdf(QString outputFileName, QString question, QString code, QString
     format.setFont(font);
     codeCursor->insertText(code + "\n", format);
 
-    frameFormat.setBackground(QBrush(Qt::lightGray));
+    QPixmap codeBg(1024, 1024);
+    {
+        codeBg.fill(Qt::lightGray);
+        QPainter p;
+        p.begin(&codeBg);
+        p.fillRect(QRect(0, 0, 4, codeBg.height()), QBrush(Qt::black));
+        p.end();
+        frameFormat.setPadding(10);
+    }
+
+    frameFormat.setBackground(QBrush(codeBg));
     auto codeOutputFrame = textCursor->insertFrame(frameFormat);
     auto codeOutputCursor = new QTextCursor(codeOutputFrame);
     codeOutputCursor->insertText(codeOutput, format);
 
-    QTextEdit *edt = new QTextEdit;
-    edt->setDocument(practicals.back().practical.get());
-    edt->show();
+    //    QTextEdit *edt = new QTextEdit;
+    //    edt->setDocument(practicals.back().practical.get());
+    //    edt->show();
 
     printPractical(*pdf, practicals, nullptr);
 }
