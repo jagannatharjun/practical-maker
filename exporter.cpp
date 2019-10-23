@@ -105,22 +105,28 @@ QPrinter *getPdf(QString outputFileName, bool previous) {
 
 #include <QTextEdit>
 
-void warning(const QString &text) { QMessageBox::warning(nullptr, "Warning", "Warning: " + text); }
+// true -> exit
+bool warning(const QString &text) {
+    return QMessageBox::warning(nullptr, "Warning", "Warning: " + text + "\nAbort?",
+                                QMessageBox::StandardButton::Yes | QMessageBox::StandardButton::No,
+                                QMessageBox::StandardButton::Yes) ==
+           QMessageBox::StandardButton::Yes;
+}
 
 void exportAsPdf(QString outputFileName, QString question, QString code, QString codeOutput,
                  QString footer, bool previous) {
 
-    if (outputFileName.isEmpty()) {
-        warning("Output File Name is Empty.");
+    if (outputFileName.isEmpty() && warning("Output File Name is Empty.")) {
+        return;
     }
-    if (question.isEmpty()) {
-        warning("Question is Empty");
+    if (question.isEmpty() && warning("Question is Empty")) {
+        return;
     }
-    if (code.isEmpty()) {
-        warning("Code is Empty");
+    if (code.isEmpty() && warning("Code is Empty")) {
+        return;
     }
-    if (footer.isEmpty()) {
-        warning("Fotter is Empty");
+    if (footer.isEmpty() && warning("Fotter is Empty")) {
+        return;
     }
 
     QPrinter *pdf = getPdf(outputFileName, previous);
