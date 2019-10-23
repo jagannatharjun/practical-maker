@@ -4,6 +4,7 @@
 #include <QTextEdit>
 
 class ConsoleWidget;
+class QProcess;
 
 class CodeEditor : public QTextEdit {
     Q_OBJECT
@@ -27,6 +28,7 @@ public slots:
     void compile();
     void onlyRun();
     void run();
+    void format();
 
 private slots:
     void _run(int compileExitCode);
@@ -35,6 +37,7 @@ private:
     ConsoleWidget *m_console;
     QString m_fileName;
     Language m_lang = Language::CppLang;
+    QProcess *m_clangFormat;
 
     void _compile();
 };

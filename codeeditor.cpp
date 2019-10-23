@@ -8,13 +8,15 @@
 
 QString myTab(int count) { return QString(count * 2, ' '); }
 
-CodeEditor::CodeEditor(QWidget *parent) : QTextEdit(parent) {
+CodeEditor::CodeEditor(QWidget *parent) : QTextEdit(parent), m_clangFormat(new QProcess) {
     auto f = font();
     f.setFamily("Source Code Pro");
     f.setPointSize(14);
     setFont(f);
 
     setAcceptRichText(false);
+
+    m_clangFormat->setProgram("clang-format");
 }
 
 void CodeEditor::compile() { _compile(); }
@@ -29,6 +31,31 @@ void CodeEditor::onlyRun() {
 void CodeEditor::run() {
     connect(m_console, &ConsoleWidget::processFinished, this, &CodeEditor::_run);
     _compile();
+}
+
+void CodeEditor::format() {
+    if (m_clangFormat->state() == QProcess::Running) {
+        QMessageBox::warning(this, "Warning",
+                             QString("%1 already running").arg(m_clangFormat->program()));
+        return;
+    }
+    m_clangFormat->disconnect();
+    QTextCursor prevcursor = textCursor();
+    auto formatedText = new QString();
+    connect(m_clangFormat, &QProcess::readyReadStandardOutput, [this, formatedText]() {
+        formatedText->append(m_clangFormat->readAllStandardOutput());
+    });
+    connect(m_clangFormat, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+            [this, prevcursor, formatedText](int exitCode, QProcess::ExitStatus exitStatus) {
+                if (exitStatus == QProcess::ExitStatus::NormalExit && !formatedText->isEmpty()) {
+                    this->setPlainText(*formatedText);
+                    this->setTextCursor(prevcursor);
+                }
+                delete formatedText;
+            });
+    m_clangFormat->start();
+    m_clangFormat->write(toPlainText().toUtf8());
+    m_clangFormat->closeWriteChannel();
 }
 
 void CodeEditor::_run(int compileExitCode) {

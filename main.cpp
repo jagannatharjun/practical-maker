@@ -69,6 +69,8 @@ int main(int argc, char *argv[]) {
         },
         QKeySequence(Qt::CTRL + Qt::Key_M));
     fileMenu->addAction("Delete Previous Merge", []() { deletePreviousMerge(); });
+    fileMenu->addAction("Format", &edit, &CodeEditor::format,
+                        QKeySequence(Qt::SHIFT + Qt::ALT + Qt::Key_F));
     fileMenu->addAction("Exit", qApp, &QApplication::closeAllWindows, QKeySequence::Quit);
 
     auto runMenu = menu.addMenu("Run");
@@ -98,11 +100,11 @@ int main(int argc, char *argv[]) {
     console.resize(900, 500);
     m.showMaximized();
 
-//    edit.setPlainText("int main() {}");
-//    edit.run();
+    //    edit.setPlainText("int main() {}");
+    //    edit.run();
 
-//    exportAsPdf("E:\\test.pdf", "My question", edit.toPlainText(), console.toPlainText(), "",
-//                false);
+    //    exportAsPdf("E:\\test.pdf", "My question", edit.toPlainText(), console.toPlainText(), "",
+    //                false);
 
     return a.exec();
 }
