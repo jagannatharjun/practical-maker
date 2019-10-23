@@ -139,17 +139,20 @@ void exportAsPdf(QString outputFileName, QString question, QString code, QString
 
     QPixmap codeBg(1024, 1024);
     {
-        codeBg.fill(Qt::lightGray);
+        codeBg.fill(QColor(Qt::gray).darker());
         QPainter p;
         p.begin(&codeBg);
-        p.fillRect(QRect(0, 0, 4, codeBg.height()), QBrush(Qt::black));
+        p.fillRect(QRect(0, 0, 6, codeBg.height()), QBrush(Qt::black));
         p.end();
-        frameFormat.setPadding(10);
+        frameFormat.setPadding(12);
     }
 
     frameFormat.setBackground(QBrush(codeBg));
     auto codeOutputFrame = textCursor->insertFrame(frameFormat);
     auto codeOutputCursor = new QTextCursor(codeOutputFrame);
+    format.setForeground(QBrush(Qt::white));
+    font.setBold(true);
+    format.setFont(font);
     codeOutputCursor->insertText(codeOutput, format);
 
     //    QTextEdit *edt = new QTextEdit;

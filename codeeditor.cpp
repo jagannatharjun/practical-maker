@@ -40,20 +40,28 @@ void CodeEditor::format() {
         return;
     }
     m_clangFormat->disconnect();
-    QTextCursor prevcursor = textCursor();
+    auto postition = textCursor().position();
     auto formatedText = new QString();
     connect(m_clangFormat, &QProcess::readyReadStandardOutput, [this, formatedText]() {
         formatedText->append(m_clangFormat->readAllStandardOutput());
     });
     connect(m_clangFormat, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-            [this, prevcursor, formatedText](int exitCode, QProcess::ExitStatus exitStatus) {
+            [this, postition, formatedText](int exitCode, QProcess::ExitStatus exitStatus) {
                 if (exitStatus == QProcess::ExitStatus::NormalExit && !formatedText->isEmpty()) {
                     this->setPlainText(*formatedText);
-                    this->setTextCursor(prevcursor);
+                    auto t = this->textCursor();
+                    t.setPosition(postition);
+                    this->setTextCursor(t);
                 }
                 delete formatedText;
             });
     m_clangFormat->start();
+    if (!m_clangFormat->waitForStarted()) {
+        QMessageBox::critical(this, "Error", "Failed to start clang-format");
+        m_clangFormat->disconnect();
+        delete formatedText;
+        return;
+    }
     m_clangFormat->write(toPlainText().toUtf8());
     m_clangFormat->closeWriteChannel();
 }
@@ -74,7 +82,7 @@ void CodeEditor::_compile() {
     m_console->show();
     auto code = toPlainText().toUtf8();
 
-    m_console->setPlainText("Compiling....");
+    m_console->setPlainText("Compiling....\n");
     if (m_lang == CppLang) {
         m_console->start("g++", {"-x", "c++", "--static", "-"});
         code.append("\n\n#include <stdio.h>\nstruct __CODE_EDITOR_DISABLE_IO_BUFFER { "
