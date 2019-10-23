@@ -1,12 +1,12 @@
 #ifndef CODEEDITOR_HPP
 #define CODEEDITOR_HPP
 
-#include <QTextEdit>
+#include <QPlainTextEdit>
 
 class ConsoleWidget;
 class QProcess;
 
-class CodeEditor : public QTextEdit {
+class CodeEditor : public QPlainTextEdit {
     Q_OBJECT
 public:
     enum Language { CLang, CppLang };

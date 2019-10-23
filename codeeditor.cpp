@@ -8,13 +8,11 @@
 
 QString myTab(int count) { return QString(count * 2, ' '); }
 
-CodeEditor::CodeEditor(QWidget *parent) : QTextEdit(parent), m_clangFormat(new QProcess) {
+CodeEditor::CodeEditor(QWidget *parent) : QPlainTextEdit(parent), m_clangFormat(new QProcess) {
     auto f = font();
     f.setFamily("Source Code Pro");
     f.setPointSize(14);
     setFont(f);
-
-    setAcceptRichText(false);
 
     m_clangFormat->setProgram("clang-format");
 }
@@ -130,7 +128,7 @@ void CodeEditor::keyPressEvent(QKeyEvent *event) {
     }
 
     if (accept)
-        QTextEdit::keyPressEvent(event);
+        QPlainTextEdit::keyPressEvent(event);
 
     keyToEat.clear();
     for (auto keyPair : completekeys) {

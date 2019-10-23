@@ -100,8 +100,7 @@ int main(int argc, char *argv[]) {
     console.resize(900, 500);
     m.showMaximized();
 
-    //    edit.setPlainText("int main() {}");
-    //    edit.run();
+    edit.setPlainText("#include <iostream>\n\nint main() { std::cout << \"Hello world\"; }");
 
     //    exportAsPdf("E:\\test.pdf", "My question", edit.toPlainText(), console.toPlainText(), "",
     //                false);

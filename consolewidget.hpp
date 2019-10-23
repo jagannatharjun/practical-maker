@@ -2,10 +2,9 @@
 #define CONSOLEWIDGET_HPP
 
 #include <QProcess>
-#include <QTextCursor>
-#include <QTextEdit>
+#include <QPlainTextEdit>
 
-class ConsoleWidget : public QTextEdit {
+class ConsoleWidget : public QPlainTextEdit {
     Q_OBJECT
 public:
     explicit ConsoleWidget(QWidget *parent = nullptr);

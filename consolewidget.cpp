@@ -2,7 +2,7 @@
 #include <QDebug>
 #include <QKeyEvent>
 
-ConsoleWidget::ConsoleWidget(QWidget *parent) : QTextEdit(parent) {
+ConsoleWidget::ConsoleWidget(QWidget *parent) : QPlainTextEdit(parent) {
     auto f = font();
     f.setFamily("Source Code Pro");
     f.setPointSize(11);
@@ -40,9 +40,9 @@ void ConsoleWidget::childCloseWrite() { m_process.closeWriteChannel(); }
 void ConsoleWidget::setWorkingDirectory(const QString &dir) { m_process.setWorkingDirectory(dir); }
 
 void ConsoleWidget::_processFinised(int exitcode, QProcess::ExitStatus exitStatus) {
-    append("Program exited with code " + QString::number(exitcode));
+    appendPlainText("Program exited with code " + QString::number(exitcode));
     if (exitStatus != QProcess::ExitStatus::NormalExit)
-        append("\nError: " + m_process.errorString());
+        appendPlainText("\nError: " + m_process.errorString());
     emit processFinished(exitcode);
 }
 
@@ -64,7 +64,7 @@ void ConsoleWidget::keyPressEvent(QKeyEvent *event) {
     }
 
     if (accept) {
-        QTextEdit::keyPressEvent(event);
+        QPlainTextEdit::keyPressEvent(event);
     }
 
     if (key == Qt::Key_Return || key == Qt::Key_Enter) {
@@ -78,5 +78,5 @@ void ConsoleWidget::keyPressEvent(QKeyEvent *event) {
 
 void ConsoleWidget::closeEvent(QCloseEvent *e) {
     m_process.kill();
-    QTextEdit::closeEvent(e);
+    QPlainTextEdit::closeEvent(e);
 }
