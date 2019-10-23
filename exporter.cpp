@@ -116,9 +116,9 @@ bool warning(const QString &text) {
 void exportAsPdf(QString outputFileName, QString question, QString code, QString codeOutput,
                  QString footer, bool previous) {
 
-    if (outputFileName.isEmpty() && warning("Output File Name is Empty.")) {
-        return;
-    }
+//    if (outputFileName.isEmpty() && warning("Output File Name is Empty.")) {
+//        return;
+//    }
     if (question.isEmpty() && warning("Question is Empty")) {
         return;
     }

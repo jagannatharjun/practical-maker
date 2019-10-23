@@ -4,12 +4,36 @@
 
 #include <QActionGroup>
 #include <QApplication>
+#include <QDebug>
 #include <QFileDialog>
 #include <QLineEdit>
 #include <QMainWindow>
 #include <QMenuBar>
 #include <QStyleFactory>
 #include <QVBoxLayout>
+
+auto readAll(const QString &file) {
+    QFile f(file);
+    if (f.open(QIODevice::ReadOnly))
+        return f.readAll();
+    return QByteArray{};
+}
+
+void dump(const QString &file, const QByteArray &txt) {
+    QFile f(file);
+    if (f.open(QIODevice::WriteOnly))
+        f.write(txt);
+    else
+        qDebug() << QString("Failed to write in %1, error - %2").arg(file, f.errorString());
+}
+
+template <typename F> struct OnScopeEnd {
+    OnScopeEnd(F &&f) : m_f(f) {}
+    ~OnScopeEnd() { m_f(); }
+
+private:
+    F m_f;
+};
 
 int main(int argc, char *argv[]) {
     QApplication a(argc, argv);
@@ -100,7 +124,18 @@ int main(int argc, char *argv[]) {
     console.resize(900, 500);
     m.showMaximized();
 
-    edit.setPlainText("#include <iostream>\n\nint main() { std::cout << \"Hello world\"; }");
+    ques.setText(readAll("question"));
+    edit.setPlainText(readAll("code"));
+    footer.setText(readAll("footer"));
+
+    OnScopeEnd saveTexts([&] {
+        dump(qApp->applicationDirPath() + "question", ques.text().toUtf8());
+        dump(qApp->applicationDirPath() + "code", edit.toPlainText().toUtf8());
+        dump(qApp->applicationDirPath() + "footer", ques.text().toUtf8());
+    });
+
+    if (edit.toPlainText().isEmpty())
+        edit.setPlainText("#include <iostream>\n\nint main() { std::cout << \"Hello world\"; }");
 
     //    exportAsPdf("E:\\test.pdf", "My question", edit.toPlainText(), console.toPlainText(), "",
     //                false);
