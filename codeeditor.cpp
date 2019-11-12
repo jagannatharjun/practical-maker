@@ -15,6 +15,7 @@ CodeEditor::CodeEditor(QWidget *parent) : QPlainTextEdit(parent), m_clangFormat(
     setFont(f);
 
     m_clangFormat->setProgram("clang-format");
+    connect(m_clangFormat, &QProcess::destroyed, []() { qDebug("clang-format destroyed"); });
 }
 
 void CodeEditor::compile() { _compile(); }
@@ -176,8 +177,10 @@ void CodeEditor::save() {
 }
 
 void CodeEditor::saveAs() {
-    m_fileName = QFileDialog::getSaveFileName(this, "Save as");
+    m_fileName = QFileDialog::getSaveFileName(this, "Save as", {}, "*.cpp");
     if (!m_fileName.isEmpty()) {
+        if (QFileInfo(m_fileName).suffix().isEmpty())
+            m_fileName += ".cpp";
         save();
     }
 }
