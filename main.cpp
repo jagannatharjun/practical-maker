@@ -13,7 +13,7 @@
 #include <QVBoxLayout>
 
 auto readAll(const QString &file) {
-    QFile f(file);
+    QFile f(qApp->applicationDirPath() + "\\" + file);
     if (f.open(QIODevice::ReadOnly))
         return f.readAll();
     return QByteArray{};
@@ -39,7 +39,9 @@ int main(int argc, char *argv[]) {
     QApplication a(argc, argv);
 
     qputenv("Path",
-            qgetenv("Path") + ";" + qApp->applicationDirPath().toUtf8() + "\\mingw32\\bin;");
+            qApp->applicationDirPath().toUtf8() + "\\mingw32\\bin;"
+                + R"(C:\Program Files\Java\jdk-14\bin;C:\Users\Prince\Downloads\Compressed\AStyle_3.1_windows\AStyle\bin;)"
+                + qgetenv("Path") + ";");
     a.setStyle(QStyleFactory::create("fusion"));
     QMainWindow m;
 
@@ -107,17 +109,27 @@ int main(int argc, char *argv[]) {
     auto langMenu = menu.addMenu("Language");
     QActionGroup langGroup(&m);
     langGroup.setExclusive(true);
-    auto clang = langMenu->addAction("C"), cpplang = langMenu->addAction("Cpp");
+    auto clang = langMenu->addAction("C"), cpplang = langMenu->addAction("Cpp"),
+         javalang = langMenu->addAction("Java");
     clang->setCheckable(true);
     cpplang->setCheckable(true);
+    javalang->setCheckable(true);
 
     langGroup.addAction(clang);
     langGroup.addAction(cpplang);
+    langGroup.addAction(javalang);
     cpplang->setChecked(true);
     clang->setChecked(false);
+    javalang->setChecked(false);
     QObject::connect(clang, &QAction::triggered, [&edit]() { edit.setLang(CodeEditor::CLang); });
     QObject::connect(cpplang, &QAction::triggered,
                      [&edit]() { edit.setLang(CodeEditor::CppLang); });
+    QObject::connect(javalang, &QAction::triggered, [&edit]() {
+        edit.setLang(CodeEditor::JavaLang);
+        edit.setPlainText("class Source {\n public static void main(String args[]) "
+                          "{\nSystem.out.print(\"Hello\");\n}}");
+    });
+    javalang->trigger();
 
     m.setMenuBar(&menu);
 
@@ -129,15 +141,12 @@ int main(int argc, char *argv[]) {
     footer.setText(readAll("footer"));
 
     OnScopeEnd saveTexts([&] {
-        dump(qApp->applicationDirPath() + "question", ques.text().toUtf8());
-        dump(qApp->applicationDirPath() + "code", edit.toPlainText().toUtf8());
-        dump(qApp->applicationDirPath() + "footer", ques.text().toUtf8());
-    });
+        dump(qApp->applicationDirPath() + "\\question", ques.text().toUtf8());
+        dump(qApp->applicationDirPath() + "\\code", edit.toPlainText().toUtf8());
+        dump(qApp->applicationDirPath() + "\\footer", footer.text().toUtf8());
+    })
 
-    if (edit.toPlainText().isEmpty())
-        edit.setPlainText("#include <iostream>\n\nint main() { std::cout << \"Hello world\"; }");
-
-    //    exportAsPdf("E:\\test.pdf", "My question", edit.toPlainText(), console.toPlainText(), "",
+        ; //    exportAsPdf("E:\\test.pdf", "My question", edit.toPlainText(), console.toPlainText(), "",
     //                false);
 
     return a.exec();

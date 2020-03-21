@@ -6,7 +6,10 @@
 #include <QMessageBox>
 #include <QtDebug>
 
-QString myTab(int count) { return QString(count * 2, ' '); }
+QString myTab(int count)
+{
+    return QString(count * 4, ' ');
+}
 
 CodeEditor::CodeEditor(QWidget *parent) : QPlainTextEdit(parent), m_clangFormat(new QProcess) {
     auto f = font();
@@ -14,7 +17,12 @@ CodeEditor::CodeEditor(QWidget *parent) : QPlainTextEdit(parent), m_clangFormat(
     f.setPointSize(14);
     setFont(f);
 
-    m_clangFormat->setProgram("clang-format");
+    m_codeDir = QDir::tempPath() + "\\Code\\";
+    if (QDir(m_codeDir).exists()) {
+        QDir().remove(m_codeDir);
+    }
+    QDir(m_codeDir).mkdir(m_codeDir);
+
     connect(m_clangFormat, &QProcess::destroyed, []() { qDebug("clang-format destroyed"); });
 }
 
@@ -23,6 +31,13 @@ void CodeEditor::compile() { _compile(); }
 void CodeEditor::onlyRun() {
     if (m_console->isHidden())
         m_console->show();
+    if (m_lang == JavaLang) {
+        m_console->setPlainText("");
+        const auto file = m_javaClassName + "";
+        m_console->setWorkingDirectory(m_codeDir);
+        m_console->start(R"(C:\Program Files\Java\jdk-14\bin\java.exe)", {file});
+        return;
+    }
     m_console->setPlainText("");
     m_console->start("./a.exe");
 }
@@ -37,6 +52,12 @@ void CodeEditor::format() {
         QMessageBox::warning(this, "Warning",
                              QString("%1 already running").arg(m_clangFormat->program()));
         return;
+    }
+    if (m_lang == CppLang || m_lang == CLang) {
+        m_clangFormat->setProgram("clang-format");
+    } else {
+        m_clangFormat->setProgram("AStyle");
+        m_clangFormat->setArguments({"--max-code-length=60"});
     }
     m_clangFormat->disconnect();
     auto postition = textCursor().position();
@@ -75,7 +96,9 @@ void CodeEditor::_run(int compileExitCode) {
 CodeEditor::Language CodeEditor::lang() const { return m_lang; }
 
 void CodeEditor::setLang(const CodeEditor::Language lang) { m_lang = lang; }
-
+#include <filesystem>
+#include <QFile>
+#include <QRegularExpression>
 void CodeEditor::_compile() {
 
     m_console->show();
@@ -87,13 +110,31 @@ void CodeEditor::_compile() {
         code.append("\n\n#include <stdio.h>\nstruct __CODE_EDITOR_DISABLE_IO_BUFFER { "
                     "__CODE_EDITOR_DISABLE_IO_BUFFER() {setvbuf(stdout, NULL, _IONBF, 0);} } "
                     "__CODE_EDITOR_DISABLE_IO_BUFFER_OBJ{};");
+    } else if (m_lang == JavaLang) {
+        QRegularExpression r(
+            R"(class\s*([_a-zA-Z][_a-zA-Z0-9]{0,30})((.|\n)*)public static void main)");
+        auto match = r.match(code);
+        m_javaClassName = match.captured(1);
+
+        QFile file(m_codeDir + m_javaClassName + ".java");
+        if (!file.open(QFile::WriteOnly)) {
+            qDebug("Can't open file to write");
+            return;
+        }
+        file.write(code);
+        file.close();
+
+        m_console->start("javac", {file.fileName()});
+        m_console->childCloseWrite();
     } else {
         m_console->start("gcc", {"-x", "c", "--static", "-"});
         code.append("\n\n#include <stdio.h>\nvoid __attribute__ ((constructor)) "
                     "__CODE_EDITOR_DISABLE_IO_BUFFER() {setvbuf(stdout, NULL, _IONBF, 0);}");
     }
-    m_console->childWrite(code);
-    m_console->childCloseWrite();
+    if (m_lang == CppLang || m_lang == CLang) {
+        m_console->childWrite(code);
+        m_console->childCloseWrite();
+    }
 }
 
 int identWidth(const QString &s, int pos) {

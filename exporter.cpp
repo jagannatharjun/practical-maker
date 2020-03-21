@@ -56,7 +56,12 @@ static void paintPage(QPrinter &printer, int pageNumber, int pageCount, QPainter
     footerRect.setTop(textRect.bottom());
     footerRect.setHeight(footerHeight);
 
+    painter->save();
+    auto f = painter->font();
+    f.setPointSize(11);
+    painter->setFont(f);
     painter->drawText(footerRect, Qt::AlignBottom | Qt::AlignLeft, footer);
+    painter->restore();
 }
 
 static void printPractical(QPrinter &printer, std::vector<Practical> &docs, QWidget *parentWidget) {
@@ -67,7 +72,7 @@ static void printPractical(QPrinter &printer, std::vector<Practical> &docs, QWid
     QSizeF pageSize = printer.pageRect().size(); // page size in pixels
     // Calculate the rectangle where to lay out the text
     const double tm = mmToPixels(printer, textMargins);
-    const qreal footerHeight = painter.fontMetrics().height() * 2;
+    const qreal footerHeight = painter.fontMetrics().height() * 3;
     const QRectF textRect(tm, tm, pageSize.width() - 2 * tm,
                           pageSize.height() - 2 * tm - footerHeight);
     // qDebug() << "textRect=" << textRect;
@@ -90,16 +95,18 @@ static void printPractical(QPrinter &printer, std::vector<Practical> &docs, QWid
 
 QPrinter *getPdf(QString outputFileName, bool previous) {
     static QPrinter pdf;
-    if (!previous || pdf.outputFileName().isEmpty()) {
+    static bool initialized = false;
+    if (!initialized) {
         pdf.setPageSize(QPageSize(QPageSize::A4));
         pdf.setOutputFormat(QPrinter::OutputFormat::PdfFormat);
         pdf.setFontEmbeddingEnabled(true);
+        qDebug("Reset");
         if (QFile::exists(outputFileName) && !QFile::remove(outputFileName)) {
             QMessageBox::critical(nullptr, "Error", "Failed to remove existing pdf");
             return nullptr;
         }
-        pdf.setOutputFileName(outputFileName);
     }
+    pdf.setOutputFileName(outputFileName);
     return &pdf;
 }
 
@@ -141,7 +148,7 @@ void exportAsPdf(QString outputFileName, QString question, QString code, QString
 
     QTextFrameFormat frameFormat;
     QTextCharFormat format;
-    QFont font("Source Code Pro", 14);
+    QFont font("Source Code Pro", 12);
 
     auto questionFrame = textCursor->insertFrame(frameFormat);
     auto questionCursor = new QTextCursor(questionFrame);

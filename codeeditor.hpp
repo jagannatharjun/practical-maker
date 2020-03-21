@@ -9,7 +9,7 @@ class QProcess;
 class CodeEditor : public QPlainTextEdit {
     Q_OBJECT
 public:
-    enum Language { CLang, CppLang };
+    enum Language { CLang, CppLang, JavaLang };
 
     CodeEditor(QWidget *parent = nullptr);
     void setConsole(ConsoleWidget *edt) { m_console = edt; }
@@ -35,7 +35,7 @@ private slots:
 
 private:
     ConsoleWidget *m_console;
-    QString m_fileName;
+    QString m_fileName, m_javaClassName, m_codeDir;
     Language m_lang = Language::CppLang;
     QProcess *m_clangFormat;
 

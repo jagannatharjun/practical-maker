@@ -30,6 +30,7 @@ ConsoleWidget::ConsoleWidget(QWidget *parent) : QPlainTextEdit(parent) {
 
 void ConsoleWidget::start(const QString &cmd, const QStringList &args) {
     m_lastWritePos = 0;
+    qDebug() << cmd << args;
     m_process.start(cmd, args);
 }
 
